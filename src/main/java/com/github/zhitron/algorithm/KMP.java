@@ -208,9 +208,54 @@ public final class KMP<E> {
     }
 
     /**
+     * 生成KMP算法的next数组。
+     * KMP算法是一种字符串匹配算法，next数组用于在匹配失败时确定模式串的滑动位置。
+     *
+     * @param length  模式串的长度
+     * @param compare 用于比较模式串中字符的谓词
+     * @return 返回生成的next数组，next数组的每个元素表示在匹配失败时模式串的滑动位置
+     */
+    public static int[] generateNext(int length, TwicePredicateInt compare) {
+        int[] next = new int[length];
+        next[0] = -1; // 初始化next数组的第一个元素为-1
+        int i = 0, j = -1;
+        // 通过双指针法计算next数组
+        while (i < length - 1) {
+            // 如果j为-1或者当前字符匹配成功，则i和j同时向后移动，并更新next数组
+            if (j == -1 || compare.test(i, j)) {
+                i++;
+                j++;
+                next[i] = j;
+            } else {
+                // 如果字符匹配失败，则j回退到next[j]的位置
+                j = next[j];
+            }
+        }
+        return next;
+    }
+
+    /**
      * 私有构造函数，防止外部实例化
      */
     private KMP() {
+    }
+
+    /**
+     * 获取输入序列的长度
+     *
+     * @return 输入序列的长度
+     */
+    public int getInputLength() {
+        return inputLength.getAsInt();
+    }
+
+    /**
+     * 获取目标序列的长度
+     *
+     * @return 目标序列的长度
+     */
+    public int getTargetLength() {
+        return targetLength.getAsInt();
     }
 
     /**
@@ -266,33 +311,6 @@ public final class KMP<E> {
     public KMP<E> setCompare(BiPredicate<E, E> compare) {
         this.compare = compare;
         return this;
-    }
-
-    /**
-     * 生成KMP算法的next数组。
-     * KMP算法是一种字符串匹配算法，next数组用于在匹配失败时确定模式串的滑动位置。
-     *
-     * @param length  模式串的长度
-     * @param compare 用于比较模式串中字符的谓词
-     * @return 返回生成的next数组，next数组的每个元素表示在匹配失败时模式串的滑动位置
-     */
-    public static int[] generateNext(int length, TwicePredicateInt compare) {
-        int[] next = new int[length];
-        next[0] = -1; // 初始化next数组的第一个元素为-1
-        int i = 0, j = -1;
-        // 通过双指针法计算next数组
-        while (i < length - 1) {
-            // 如果j为-1或者当前字符匹配成功，则i和j同时向后移动，并更新next数组
-            if (j == -1 || compare.test(i, j)) {
-                i++;
-                j++;
-                next[i] = j;
-            } else {
-                // 如果字符匹配失败，则j回退到next[j]的位置
-                j = next[j];
-            }
-        }
-        return next;
     }
 
     /**

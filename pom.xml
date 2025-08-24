@@ -6,7 +6,7 @@
 
     <groupId>io.github.zhitron</groupId>
     <artifactId>algorithm-kmp</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <name>Algorithm KMP</name>
     <description>
         Java implementation of the Knuth-Morris-Pratt (KMP) algorithm for efficient pattern matching in sequences.
