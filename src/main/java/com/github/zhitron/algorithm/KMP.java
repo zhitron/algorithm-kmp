@@ -327,7 +327,7 @@ public final class KMP<E> {
         // 检查输入数组长度是否大于当前列表长度，如果是则直接返回 -1
         if (inputLen == 0 || valuesLen == 0 || valuesLen > inputLen) return -1;
         if (start >= inputLen) return -1;
-        if (start < 0) start = 0;
+        if (start <= 0) start = 0;
         // 使用KMP算法生成next数组，用于优化匹配过程
         int[] next = KMP.generateNext(valuesLen, (i, j) -> compare.test(targetAccessor.apply(i), targetAccessor.apply(j)));
         // 初始化指针，i 用于遍历当前列表，j 用于遍历输入数组
@@ -364,7 +364,7 @@ public final class KMP<E> {
         // 检查输入数组是否为空或 null，如果是则直接返回 -1
         // 检查输入数组长度是否大于当前列表长度，如果是则直接返回 -1
         if (inputLen == 0 || valuesLen == 0 || valuesLen > inputLen) return -1;
-        if (start <= 0) return -1;
+        if (start < 0) return -1;
         if (start > inputLen - valuesLen) start = inputLen - valuesLen;
         // 使用KMP算法生成next数组，用于优化匹配过程
         int[] next = KMP.generateNext(valuesLen, (i, j) -> compare.test(targetAccessor.apply(i), targetAccessor.apply(j)));
