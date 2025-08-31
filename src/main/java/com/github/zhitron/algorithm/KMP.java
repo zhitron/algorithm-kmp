@@ -10,12 +10,24 @@ import java.util.function.IntSupplier;
 
 /**
  * KMP算法实现类，用于高效地在数组或列表中查找子序列。
+ * <p>
+ * KMP算法的核心思想是当匹配失败时，利用已经匹配的部分信息，
+ * 避免从头开始匹配，从而提高匹配效率。
+ * </p>
+ * <p>
+ * 该类通过设置输入序列和目标序列的访问器和长度提供器，
+ * 以及元素比较器，实现对不同数据结构的通用匹配。
+ * </p>
  *
  * @param <E> 元素类型
  * @author zhitron
  */
 @SuppressWarnings("NumberEquality")
 public final class KMP<E> {
+    /**
+     * 表示未找到匹配项时的返回值
+     */
+    public static final int NOT_FOUND = -1;
     /**
      * 输入序列的长度提供器
      */
@@ -317,37 +329,66 @@ public final class KMP<E> {
      * 查找指定数组在当前列表中的第一次出现的位置。
      * 该函数使用KMP算法进行匹配，以提高查找效率。
      *
-     * @param start 起始查找位置
+     * @param offset 起始查找位置
      * @return 如果找到指定数组，则返回其在当前列表中的起始索引；否则返回 -1
      */
-    public int indexOf(int start) {
+    public int indexOf(int offset) {
+        return this.indexOf(offset, inputLength.getAsInt());
+    }
+
+    /**
+     * 在指定范围内查找目标序列在输入序列中第一次出现的位置。
+     * 使用KMP算法进行高效匹配。
+     *
+     * @param startInclusive 起始查找位置（包含）
+     * @param endExclusive   结束查找位置（不包含）
+     * @return 如果找到目标序列，则返回其在输入序列中的起始索引；否则返回 -1
+     */
+    public int indexOf(int startInclusive, int endExclusive) {
+        // 检查查找范围是否有效：起始位置不能大于等于结束位置
+        if (startInclusive >= endExclusive) return NOT_FOUND;
+
+        // 获取输入序列和目标序列的长度
         int inputLen = inputLength.getAsInt();
         int valuesLen = targetLength.getAsInt();
-        // 检查输入数组是否为空或 null，如果是则直接返回 -1
-        // 检查输入数组长度是否大于当前列表长度，如果是则直接返回 -1
-        if (inputLen == 0 || valuesLen == 0 || valuesLen > inputLen) return -1;
-        if (start >= inputLen) return -1;
-        if (start <= 0) start = 0;
-        // 使用KMP算法生成next数组，用于优化匹配过程
+
+        // 检查序列是否有效：输入序列或目标序列长度小于等于0，或者目标序列长度大于输入序列长度
+        if (inputLen <= 0 || valuesLen <= 0 || valuesLen > inputLen) return NOT_FOUND;
+
+        // 检查查找范围是否有效：结束位置小于等于0，或者起始位置超出输入序列范围
+        if (endExclusive <= 0 || startInclusive >= inputLen) return NOT_FOUND;
+
+        // 调整查找范围到有效边界内
+        if (startInclusive < 0) startInclusive = 0;
+        if (endExclusive > inputLen) endExclusive = inputLen;
+
+        // 检查在指定范围内是否有足够的字符进行匹配
+        if (valuesLen > endExclusive - startInclusive) return NOT_FOUND;
+
+        // 生成KMP算法的next数组，用于优化匹配过程
         int[] next = KMP.generateNext(valuesLen, (i, j) -> compare.test(targetAccessor.apply(i), targetAccessor.apply(j)));
-        // 初始化指针，i 用于遍历当前列表，j 用于遍历输入数组
-        int i = start, j = 0;
-        while (i < inputLen && j < valuesLen) {
-            // 如果字符匹配，则继续比较下一个字符
+
+        // 初始化指针，i用于遍历输入序列，j用于遍历目标序列
+        int i = startInclusive, j = 0;
+
+        // 执行KMP匹配算法
+        while (i < endExclusive && j < valuesLen) {
+            // 如果字符匹配或j为-1（表示重新开始匹配），则继续比较下一个字符
             if (j == -1 || compare.test(inputAccessor.apply(i), targetAccessor.apply(j))) {
                 i++;
                 j++;
             } else {
-                // 如果字符不匹配，则根据next数组调整 j 的位置
+                // 如果字符不匹配，则根据next数组调整j的位置
                 j = next[j];
             }
         }
-        // 如果 j 等于输入数组的长度，说明找到了匹配的数组，返回起始索引
+
+        // 如果j等于目标序列的长度，说明找到了完整的匹配，返回起始索引
         if (j == valuesLen) {
             return i - j;
         } else {
-            // 否则返回 -1，表示未找到匹配的数组
-            return -1;
+            // 否则返回-1，表示未找到匹配
+            return NOT_FOUND;
         }
     }
 
@@ -355,37 +396,70 @@ public final class KMP<E> {
      * 查找指定数组在当前列表中的最后一次出现的位置。
      * 该函数使用修改版的KMP算法从末尾开始匹配，以提高查找效率。
      *
-     * @param start 起始查找位置
+     * @param offset 起始查找位置
      * @return 如果找到指定数组，则返回其在当前列表中的起始索引；否则返回 -1
      */
-    public int lastIndexOf(int start) {
+    public int lastIndexOf(int offset) {
+        return this.lastIndexOf(0, offset + 1);
+    }
+
+    /**
+     * 在指定范围内查找目标序列在输入序列中最后一次出现的位置。
+     * 使用修改版的KMP算法从末尾开始匹配，以提高查找效率。
+     *
+     * @param startInclusive 起始查找位置（包含）
+     * @param endExclusive   结束查找位置（不包含）
+     * @return 如果找到目标序列，则返回其在输入序列中的起始索引；否则返回 -1
+     */
+    public int lastIndexOf(int startInclusive, int endExclusive) {
+        // 检查查找范围是否有效：起始位置不能大于等于结束位置
+        if (startInclusive >= endExclusive) return NOT_FOUND;
+
+        // 获取输入序列和目标序列的长度
         int inputLen = inputLength.getAsInt();
         int valuesLen = targetLength.getAsInt();
-        // 检查输入数组是否为空或 null，如果是则直接返回 -1
-        // 检查输入数组长度是否大于当前列表长度，如果是则直接返回 -1
-        if (inputLen == 0 || valuesLen == 0 || valuesLen > inputLen) return -1;
-        if (start < 0) return -1;
-        if (start > inputLen - valuesLen) start = inputLen - valuesLen;
+
+        // 检查序列是否有效：输入序列或目标序列长度小于等于0，或者目标序列长度大于输入序列长度
+        if (inputLen <= 0 || valuesLen <= 0 || valuesLen > inputLen) return NOT_FOUND;
+
+        // 检查查找范围是否有效：结束位置小于等于0，或者起始位置超出输入序列范围
+        if (endExclusive <= 0 || startInclusive >= inputLen) return NOT_FOUND;
+
+        // 调整查找范围到有效边界内
+        if (startInclusive < 0) startInclusive = 0;
+        if (endExclusive > inputLen) endExclusive = inputLen;
+
+        // 检查在指定范围内是否有足够的字符进行匹配
+        if (valuesLen > endExclusive - startInclusive) return NOT_FOUND;
+
         // 使用KMP算法生成next数组，用于优化匹配过程
         int[] next = KMP.generateNext(valuesLen, (i, j) -> compare.test(targetAccessor.apply(i), targetAccessor.apply(j)));
-        // 从列表末尾开始匹配，i为列表中的起始位置，j为模式串的匹配位置
-        int i = start;
+
+        // 从指定范围的末尾开始匹配，i为输入序列中的起始位置，j为目标序列的匹配位置
+        int i = endExclusive - valuesLen;
         int j = 0;
-        // 使用KMP算法进行匹配
-        while (i >= 0 && j < valuesLen) {
+
+        // 使用修改版的KMP算法进行匹配
+        while (i >= startInclusive && j < valuesLen) {
+            // 如果字符匹配或j为-1（表示重新开始匹配），则继续比较下一个字符
             if (j == -1 || compare.test(inputAccessor.apply(i + j), targetAccessor.apply(j))) {
                 j++;
             } else {
-                // 根据next数组移动i，并更新j的值
-                i -= (j - next[j]);
-                j = next[j];
+                // 如果字符不匹配，则根据next数组调整i的位置，并更新j的值
+                if (j == 0) {
+                    i--;
+                } else {
+                    i -= (j - next[j]);
+                    j = next[j];
+                }
             }
         }
+
         // 判断是否找到匹配的数组
         if (j == valuesLen) {
             return i;
         } else {
-            return -1;
+            return NOT_FOUND;
         }
     }
 }
